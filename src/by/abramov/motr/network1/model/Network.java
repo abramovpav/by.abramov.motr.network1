@@ -10,8 +10,8 @@ public class Network {
 	private final int neuronCount;
 	private final int n; 
 	
-	private double[][] firstLayerMatrix;
-	private double[][] secondLayerMatrix;
+	private float[][] firstLayerMatrix;
+	private float[][] secondLayerMatrix;
 	 
 	private TrainingTask task;
 	private Thread taskThread; 
@@ -19,21 +19,21 @@ public class Network {
 	
 
 	
-	public Network(int n, List<double []> inputVector) {
+	public Network(int n, List<float []> inputVector) {
 		super();
 		this.n = n;
 		this.neuronCount = 4;
-		this.firstLayerMatrix = new double[n][this.neuronCount];
-		this.secondLayerMatrix = new double[this.neuronCount][n];
+		this.firstLayerMatrix = new float[n][this.neuronCount];
+		this.secondLayerMatrix = new float[this.neuronCount][n];
 		init();
 	}
 	
-	public Network(int n, int neuronCount, List<double []> inputVector) {
+	public Network(int n, int neuronCount, List<float []> inputVector) {
 		super();
 		this.n = n;
 		this.neuronCount = neuronCount;
-		this.firstLayerMatrix = new double[n][this.neuronCount];
-		this.secondLayerMatrix = new double[this.neuronCount][n];
+		this.firstLayerMatrix = new float[n][this.neuronCount];
+		this.secondLayerMatrix = new float[this.neuronCount][n];
 		init();
 	}
 	
@@ -41,29 +41,29 @@ public class Network {
 		Random random = new Random(2701);
 		for (int i = 0; i < this.n; i++) {
 			for (int j = 0; j < this.neuronCount; j++) {
-				this.firstLayerMatrix[i][j] = this.secondLayerMatrix[j][i] = random.nextDouble();
+				this.firstLayerMatrix[i][j] = this.secondLayerMatrix[j][i] = random.nextFloat();
 			}
 		}
 		normalizeFirstLayer();
         normalizeSecondLayer();
 	}
 	
-	public double[][] getFirstLayer() {
+	public float[][] getFirstLayer() {
 		return firstLayerMatrix;
 	}
 	
-	public void setFirstLayer(double [][] firstLayer) {
+	public void setFirstLayer(float [][] firstLayer) {
 		this.firstLayerMatrix = firstLayer;
 	}
 	
-	public double[][] getSecondLayer() {
+	public float[][] getSecondLayer() {
 		return secondLayerMatrix;
 	}
-	public void setSecondLayer(double [][] secondLayer) {
+	public void setSecondLayer(float [][] secondLayer) {
 		this.secondLayerMatrix = secondLayer;
 	}
 	
-	public void firstLayerProcess(double[] x, double[] y) {
+	public void firstLayerProcess(float[] x, float[] y) {
 		for (int i = 0; i < neuronCount; i++) {
 			y[i] = 0;
 			for (int j = 0; j < n; j++) {
@@ -72,7 +72,7 @@ public class Network {
 		}
 	}
 	
-	public void secondLayerProcess(double[] y, double[] newX) {
+	public void secondLayerProcess(float[] y, float[] newX) {
 		for (int i = 0; i < n; i++) {
 			newX[i] = 0;
 			for (int j = 0; j < neuronCount; j++) {
@@ -109,13 +109,13 @@ public class Network {
         }
     }
 	
-	public List<double []> getImageData(List<double []> inputData) {
-		List<double []> list = new ArrayList<>();
-		double y[] = new double[this.neuronCount];
+	public List<float []> getImageData(List<float []> inputData) {
+		List<float []> list = new ArrayList<>();
+		float y[] = new float[this.neuronCount];
 		
 		
-		for (double[] x: inputData) {
-			double newX[] = new double[n];
+		for (float[] x: inputData) {
+			float newX[] = new float[n];
 			firstLayerProcess(x, y);
 			secondLayerProcess(y, newX);
 			list.add(newX);

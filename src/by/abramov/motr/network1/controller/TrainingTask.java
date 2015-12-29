@@ -1,31 +1,37 @@
 package by.abramov.motr.network1.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import by.abramov.motr.network1.model.Network;
+import by.abramov.motr.network1.model.Storage;
 import by.abramov.motr.network1.util.Utils;
 
 public class TrainingTask implements Runnable {
 		
 		private boolean canceled = false;
-		private double error = Double.MAX_VALUE;
-		private double minError;
+		public float errorToShow = Float.MAX_VALUE;
+		public boolean stopped = false;
+		private float error = Float.MAX_VALUE;
+		private float minError;
 		private int n;
 		private int neuronCount;
-		private double trainRatio;
-		private List<double[]> data;
-		private List<double[]> newData;
+		private float trainStep;
+		private List<float[]> data;
+		private List<float[]> newData;
 		private ImageView outputImage;
+		public Network network;
+		public int iteration = 0;
 		
-		public TrainingTask(double minError, int n, int neuronCount, List<double []> data, 
-				double trainRatio, ImageView outputImage) {
+		public TrainingTask(float minError, int n, int neuronCount, List<float []> data, 
+				float trainRatio, ImageView outputImage) {
 			this.n = n;
 			this.neuronCount = neuronCount;
 			this.data = data;
 			this.minError = minError;
-			this.trainRatio = trainRatio;
+			this.trainStep = trainRatio;
 			this.outputImage = outputImage;
 		}
 		
@@ -40,31 +46,31 @@ public class TrainingTask implements Runnable {
 		
 	    public void run() {
 	    	
-	    	Network network = new Network(n, neuronCount, data);
-	    	int iteration = 0;
+	    	network = new Network(n, neuronCount, data);
+	    	outputImage.setImage(null);
 
 	        while(error > minError) {
-	        	iteration++;
+	        	
+	        	float y[] = new float[neuronCount];
+		        float newX[] = new float[n];
+		        float gamma[] = new float[neuronCount];
+		        
+		        float [][] firstLayer = network.getFirstLayer();
+		        float [][] secondLayer = network.getSecondLayer();
+	        	
 		        if (isCanceled()) {
-		        	System.out.println("StopTask. Iteration = " + iteration + ", Error = " + error);
+		        	this.log(iteration, error, true);
 		        	newData = network.getImageData(data);
-		        	System.out.println(newData.size());
-		        	System.out.println(newData.get(0)[0]);
-		        	System.out.println(newData.get(0).length);
-		        	Image nimage = Utils.restoreImageData(newData, 8, 8, 256, 256);
+		        	Image nimage = Utils.restoreImageData(newData, Storage.fragmentWidth, Storage.fragmentHeight, Storage.originWidth, Storage.originHeight);
 		        	System.out.println();
 		        	outputImage.setImage(nimage);
+		        	stopped = true;
 		        	break;
 		        }
 		        	
-		        double y[] = new double[neuronCount];
-		        double newX[] = new double[n];
-		        double gamma[] = new double[neuronCount];
 		        
-		        double [][] firstLayer = network.getFirstLayer();
-		        double [][] secondLayer = network.getSecondLayer();
 		        	
-		        for (double x[]: data) {
+		        for (float x[]: data) {
 		        
 			        network.firstLayerProcess(x, y);
 			        network.secondLayerProcess(y, newX);
@@ -78,8 +84,8 @@ public class TrainingTask implements Runnable {
 
 	                for (int i = 0; i < n; ++i) {
 	                    for (int j = 0; j < neuronCount; ++j) {
-	                    	firstLayer[i][j] -= trainRatio * gamma[j] * x[i];
-	                    	secondLayer[j][i] -= trainRatio * (newX[i] - x[i]) * y[j];
+	                    	firstLayer[i][j] -= trainStep * gamma[j] * x[i];
+	                    	secondLayer[j][i] -= trainStep * (newX[i] - x[i]) * y[j];
 	                    }
 	                }
 	                network.normalizeFirstLayer();
@@ -87,26 +93,34 @@ public class TrainingTask implements Runnable {
 
 		        }
 		        error = 0;
-		        for (double [] x: data) {
+		        for (float [] x: data) {
 	                network.firstLayerProcess(x, y);
 	                network.secondLayerProcess(y, newX);
 	                error += getError(x, newX);
 	            }
-		        
-		        if (iteration % 10 == 0) {
-		        	System.out.println("Iteration = " + iteration + ", Error = " + error);
-		        }
+		        error /= 2;
+		        iteration++;
+		        errorToShow = error;        
 		        	
 	        }
-	        System.out.println("Iteration = " + iteration + ", Error = " + error);
+	        this.log(iteration, error, true);
 	        newData = network.getImageData(data);
+	        stopped = true;
 	    }
 	    
-	    public List<double[]> getNewData() {
+	    private void log(int iteration, float error, boolean stop) {
+	    	String message = "Iteration = " + iteration + ", Error = " + error;
+	    	if (stop) {
+	    		message = "Stop task. " + message;
+	    	}
+	    	System.out.println(message);
+	    }
+	    
+	    public List<float[]> getNewData() {
 	    	return newData;
 	    }
 	    
-	    private double getError(double[] x, double[] newX) {
+	    private float getError(float[] x, float[] newX) {
 
 	        float e = 0;
 	        for (int i = 0; i < x.length; ++i) {
